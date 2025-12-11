@@ -1,7 +1,7 @@
 'use client'
-
+OBO
 import { useFormStatus } from 'react-dom'
-import { type ComponentProps, useState, useEffect } from 'react'
+import { type ComponentProps } from 'react'
 import { Loader2 } from 'lucide-react'
 
 type SubmitButtonsProps = {
@@ -10,24 +10,30 @@ type SubmitButtonsProps = {
 }
 
 export function SubmitButtons({ loginAction, signupAction }: SubmitButtonsProps) {
-    const { pending } = useFormStatus()
-    const [clickedButton, setClickedButton] = useState<'login' | 'signup' | null>(null)
+    const { pending, data } = useFormStatus()
 
-    // Reset clicked button when pending state returns to false (submission finished)
-    useEffect(() => {
-        if (!pending) {
-            setClickedButton(null)
-        }
-    }, [pending])
+    // We can't easily know EXACTLY which button was clicked without a bit of a hack 
+    // or checking the data if we added a hidden input, but useFormStatus data 
+    // is only available during the submission.
+    // A simpler UX pattern for this dual-button form:
+    // Just show spinner on the generic "pending" state for the whole form, 
+    // but we can try to be specific if we used onClick handlers, but server actions 
+    // work best with standard forms.
+    // valid pattern: add name="action" value="login" to buttons and check data.get('action')
 
-    const isLogin = clickedButton === 'login'
-    const isSignup = clickedButton === 'signup'
+    const action = data?.get('action')
+    const isLogin = action === 'login'
+    const isSignup = action === 'signup'
+
+    // Refined Logic: If pending is true but we don't know the action (initial hydration or edge case),
+    // default to just disabling all.
 
     return (
         <div className="flex flex-col gap-3 pt-2">
             <button
                 formAction={loginAction}
-                onClick={() => setClickedButton('login')}
+                name="action"
+                value="login"
                 disabled={pending}
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-emerald-600 text-white hover:bg-emerald-700/90 h-10 px-4 py-2 w-full dark:bg-emerald-600 dark:text-zinc-50 dark:hover:bg-emerald-600/90"
             >
@@ -50,7 +56,8 @@ export function SubmitButtons({ loginAction, signupAction }: SubmitButtonsProps)
 
             <button
                 formAction={signupAction}
-                onClick={() => setClickedButton('signup')}
+                name="action"
+                value="signup"
                 disabled={pending}
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-zinc-200 bg-white hover:bg-zinc-100 hover:text-zinc-900 h-10 px-4 py-2 w-full dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 text-zinc-900 dark:text-zinc-100"
             >
