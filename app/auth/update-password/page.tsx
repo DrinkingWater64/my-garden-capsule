@@ -1,5 +1,5 @@
 import { updatePassword } from './actions'
-import { SubmitButton } from '@/app/forgot-password/submit-button'
+import { SubmitButton } from '@/app/forgot-password/submit-buttons'
 
 export default async function UpdatePasswordPage(props: {
     searchParams: Promise<{ error?: string; message?: string }>
