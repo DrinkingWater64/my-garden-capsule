@@ -82,24 +82,29 @@ export default async function LoginPage(props: {
                         </div>
 
                         <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <label
-                                    htmlFor="password"
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-900 dark:text-zinc-100"
-                                >
-                                    Password
-                                </label>
-                            </div>
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                required
-                                placeholder="••••••••"
-                                className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-emerald-600 focus:border-emerald-500 transition-colors"
-                            />
                         </div>
-
+                        <div className="flex items-center justify-between">
+                            <label
+                                htmlFor="password"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-900 dark:text-zinc-100"
+                            >
+                                Password
+                            </label>
+                            <a
+                                href="/forgot-password"
+                                className="text-sm font-medium text-emerald-600 hover:text-emerald-500 dark:text-emerald-400"
+                            >
+                                Forgot password?
+                            </a>
+                        </div>
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            required
+                            placeholder="••••••••"
+                            className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-emerald-600 focus:border-emerald-500 transition-colors"
+                        />
                         <SubmitButtons loginAction={login} signupAction={signup} />
                     </form>
                 </div>
