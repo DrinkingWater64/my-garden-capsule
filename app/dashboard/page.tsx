@@ -72,8 +72,8 @@ export default async function Dashboard() {
                             {(gardens || []).map((garden: any) => {
                                 // Determine lock status based on date or explicit lock
                                 const revealDate = new Date(garden.reveal_date)
-                                const isLocked = garden.is_locked && revealDate > new Date()
-
+                                // const isLocked = revealDate > new Date()
+                                const isLocked = false // for dev purpose we are making it false
                                 return (
                                     <Link
                                         href={`/gardens/${garden.id}`}
