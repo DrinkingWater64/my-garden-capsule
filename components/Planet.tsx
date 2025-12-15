@@ -1,108 +1,171 @@
 'use client';
 
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Environment, OrbitControls, Sphere, useGLTF } from '@react-three/drei';
-import { Suspense, useState, useMemo, useRef } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { Environment, OrbitControls, useGLTF } from '@react-three/drei';
+import { Suspense, useState, useMemo, useEffect } from 'react';
 import * as THREE from 'three';
 
 const NUM_TREES = 20;
-const PLANET_RADIUS = 2;
 
-function Tree({ position, visible }: { position: THREE.Vector3; visible: boolean }) {
-    const { scene } = useGLTF('/glb/tree1.glb');
-    const clone = useMemo(() => scene.clone(), [scene]);
+function PlanetModel({ onLoad }: { onLoad: (trees: THREE.Object3D[], water: THREE.Object3D, terrain: THREE.Object3D) => void }) {
+    const { scene } = useGLTF('/glb/Planet.glb');
 
-    // Align tree to surface normal
-    useMemo(() => {
-        // Up vector is (0,1,0) by default for the model usually.
-        // We want local Y to point along the position vector (normal of sphere at that point)
-        const target = position.clone().normalize().add(position); // Look at a point "outside" along the normal
-        clone.lookAt(target);
+    useEffect(() => {
+        const trees: THREE.Object3D[] = [];
+        let waterSphere: THREE.Object3D | null = null;
+        let planetTerrain: THREE.Object3D | null = null;
 
-        // Fix rotation if model is not Y-up or if lookAt behavior needs adjustment.
-        // Usually lookAt points the +Z axis at target. 
-        // If tree model is Y-up, we might need to rotate geometry or adjust.
-        // Let's assume standard behavior first. If tree lies flat, we fix it.
-        // Actually, lookAt points +Z. If we want +Y to point out, we need to rotate X by 90 deg?
-        // Let's rely on standard practice: usually better to use a dummy object or quaternion math.
+        // Traverse the scene to find trees, water, and terrain
+        scene.traverse((child) => {
+            // Find trees by name pattern (Tree_001, Tree_002, etc.)
+            if (child.name.startsWith('Tree_')) {
+                trees.push(child);
+                child.visible = false; // Hide all trees initially
+            }
 
-        const up = new THREE.Vector3(0, 1, 0);
-        const normal = position.clone().normalize();
-        const quaternion = new THREE.Quaternion().setFromUnitVectors(up, normal);
-        clone.setRotationFromQuaternion(quaternion);
+            // Find water sphere
+            if (child.name === 'planet_water') {
+                waterSphere = child;
+                child.visible = false; // Hide water initially
+            }
 
-    }, [clone, position]);
+            // Find planet terrain
+            if (child.name === 'planet_terrain') {
+                planetTerrain = child;
 
-    if (!visible) return null;
+                // Apply desert material
+                if (child instanceof THREE.Mesh) {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: '#e6c288', // Desert color
+                        roughness: 0.8,
+                        metalness: 0.1,
+                    });
+                }
+            }
+        });
 
-    return <primitive object={clone} position={position} scale={[0.1, 0.1, 0.1]} />;
+        // Sort trees by name to ensure consistent order
+        trees.sort((a, b) => a.name.localeCompare(b.name));
+
+        if (trees.length > 0 && waterSphere && planetTerrain) {
+            onLoad(trees, waterSphere, planetTerrain);
+        } else {
+            console.warn('Could not find all required objects:', {
+                treesFound: trees.length,
+                waterFound: !!waterSphere,
+                terrainFound: !!planetTerrain
+            });
+        }
+    }, [scene, onLoad]);
+
+    return <primitive object={scene} />;
 }
 
-function PlanetMesh({ isGreen, onClick }: { isGreen: boolean; onClick: () => void }) {
+function InteractivePlanet() {
+    const [clickCount, setClickCount] = useState(0);
+    const [trees, setTrees] = useState<THREE.Object3D[]>([]);
+    const [waterSphere, setWaterSphere] = useState<THREE.Object3D | null>(null);
+    const [planetTerrain, setPlanetTerrain] = useState<THREE.Object3D | null>(null);
+
+    const isGreen = clickCount > 10;
+    const visibleTreeCount = isGreen ? NUM_TREES : clickCount;
+
+    const handleModelLoad = useMemo(() => {
+        return (treeObjects: THREE.Object3D[], water: THREE.Object3D, terrain: THREE.Object3D) => {
+            setTrees(treeObjects);
+            setWaterSphere(water);
+            setPlanetTerrain(terrain);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (trees.length === 0) return;
+
+        // Update tree visibility
+        trees.forEach((tree, index) => {
+            tree.visible = index < visibleTreeCount;
+        });
+
+        // Update water visibility and planet color
+        if (waterSphere) {
+            waterSphere.visible = isGreen;
+        }
+
+        if (planetTerrain && planetTerrain instanceof THREE.Mesh) {
+            const material = planetTerrain.material as THREE.MeshStandardMaterial;
+            material.color.set(isGreen ? '#4ade80' : '#e6c288');
+        }
+    }, [visibleTreeCount, isGreen, trees, waterSphere, planetTerrain]);
+
+    const handleClick = (e: any) => {
+        e.stopPropagation();
+        setClickCount(prev => prev + 1);
+    };
+
     return (
-        <Sphere args={[PLANET_RADIUS, 64, 64]} onClick={(e) => { e.stopPropagation(); onClick(); }} position={[0, 0, 0]}>
-            <meshStandardMaterial
-                color={isGreen ? "#4ade80" : "#e6c288"}
-                roughness={0.8}
-                metalness={0.1}
-            />
-        </Sphere>
+        <>
+            <group onClick={handleClick}>
+                <PlanetModel onLoad={handleModelLoad} />
+            </group>
+        </>
     );
 }
 
 export default function Planet() {
     const [clickCount, setClickCount] = useState(0);
+    const [trees, setTrees] = useState<THREE.Object3D[]>([]);
+    const [waterSphere, setWaterSphere] = useState<THREE.Object3D | null>(null);
+    const [planetTerrain, setPlanetTerrain] = useState<THREE.Object3D | null>(null);
 
-    // Logic: 
-    // <= 10 clicks: show 'clickCount' trees.
-    // > 10 clicks: show ALL 20 trees.
     const isGreen = clickCount > 10;
-    const visibleTreeCount = isGreen ? NUM_TREES : clickCount;
+    const visibleTreeCount = isGreen ? trees.length : clickCount;
 
-    // Generate fixed positions on mount
-    const treePositions = useMemo(() => {
-        const pos: THREE.Vector3[] = [];
-        const minD = 0.8; // Minimum distance between trees to avoid overlap
-
-        // Simple rejection sampling
-        let attempts = 0;
-        while (pos.length < NUM_TREES && attempts < 1000) {
-            attempts++;
-            const v = new THREE.Vector3().randomDirection().multiplyScalar(PLANET_RADIUS);
-
-            // Filter for "Face" of planet. 
-            // Camera is at [0, 2, 5]. 
-            // We want points roughly facing the camera.
-            // Let's prioritize y > -0.5 and z > -0.5
-            if (v.y < -0.5 || v.z < -0.5) continue;
-
-            // Check distance against existing
-            let tooClose = false;
-            for (const p of pos) {
-                if (v.distanceTo(p) < minD) {
-                    tooClose = true;
-                    break;
-                }
-            }
-            if (!tooClose) pos.push(v);
-        }
-        return pos;
+    const handleModelLoad = useMemo(() => {
+        return (treeObjects: THREE.Object3D[], water: THREE.Object3D, terrain: THREE.Object3D) => {
+            setTrees(treeObjects);
+            setWaterSphere(water);
+            setPlanetTerrain(terrain);
+        };
     }, []);
 
-    const handleClick = () => {
+    useEffect(() => {
+        if (trees.length === 0) return;
+
+        // Update tree visibility
+        trees.forEach((tree, index) => {
+            tree.visible = index < visibleTreeCount;
+        });
+
+        // Update water visibility
+        if (waterSphere) {
+            waterSphere.visible = isGreen;
+        }
+
+        // Update planet color
+        if (planetTerrain) {
+            planetTerrain.traverse((child) => {
+                if (child instanceof THREE.Mesh) {
+                    const material = child.material as THREE.MeshStandardMaterial;
+                    material.color.set(isGreen ? '#4ade80' : '#e6c288');
+                }
+            });
+        }
+    }, [visibleTreeCount, isGreen, trees, waterSphere, planetTerrain]);
+
+    const handleClick = (e: any) => {
+        e.stopPropagation();
         setClickCount(prev => prev + 1);
     };
 
     return (
         <div className="w-full h-[500px] relative">
-            <Canvas shadows camera={{ position: [0, 2, 5], fov: 50 }}>
+            <Canvas shadows camera={{ position: [0, 20, 50], fov: 50 }}>
                 <ambientLight intensity={0.5} />
                 <directionalLight position={[5, 10, 5]} intensity={1} castShadow />
                 <Suspense fallback={null}>
-                    <PlanetMesh isGreen={isGreen} onClick={handleClick} />
-                    {treePositions.map((pos, i) => (
-                        <Tree key={i} position={pos} visible={i < visibleTreeCount} />
-                    ))}
+                    <group onClick={handleClick}>
+                        <PlanetModel onLoad={handleModelLoad} />
+                    </group>
                     <Environment preset="sunset" />
                 </Suspense>
                 <OrbitControls
@@ -113,10 +176,10 @@ export default function Planet() {
                 />
             </Canvas>
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-zinc-800 dark:text-zinc-200 text-sm font-medium z-10 pointer-events-none select-none">
-                {isGreen ? "The planet is thriving!" : "Click to plant trees..."} ({visibleTreeCount}/{NUM_TREES})
+                {isGreen ? "The planet is thriving!" : "Click to plant trees..."} ({visibleTreeCount}/{trees.length || NUM_TREES})
             </div>
         </div>
     );
 }
 
-useGLTF.preload('/glb/tree1.glb');
+useGLTF.preload('/glb/planet.glb');
