@@ -5,7 +5,7 @@ import PlanetLoader from "@/components/PlanetLoader";
 export default async function Home() {
   const supabase = await createClient()
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 relative overflow-hidden">
+    <main className="flex min-h-screen flex-col items-center justify-start p-24 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 relative overflow-hidden">
       <div className="z-10 flex flex-col items-center">
         <h1 className="text-4xl font-bold mb-4">My Garden</h1>
         <p className="mb-8 text-zinc-500">Cultivate your digital memories.</p>
