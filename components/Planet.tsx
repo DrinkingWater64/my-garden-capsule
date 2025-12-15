@@ -111,6 +111,19 @@ function InteractivePlanet() {
     );
 }
 
+// Rotating group component for planet spin
+function RotatingGroup({ children }: { children: React.ReactNode }) {
+    const groupRef = useRef<THREE.Group>(null);
+
+    useFrame((state, delta) => {
+        if (groupRef.current) {
+            groupRef.current.rotation.y += delta * 0.1; // Slow rotation speed
+        }
+    });
+
+    return <group ref={groupRef}>{children}</group>;
+}
+
 export default function Planet() {
     const [clickCount, setClickCount] = useState(0);
     const [trees, setTrees] = useState<THREE.Object3D[]>([]);
@@ -161,16 +174,18 @@ export default function Planet() {
                 <ambientLight intensity={0.5} />
                 <directionalLight position={[5, 10, 5]} intensity={1} castShadow />
                 <Suspense fallback={null}>
-                    <group onClick={handleClick}>
-                        <PlanetModel onLoad={handleModelLoad} />
-                        <AnimationController
-                            trees={trees}
-                            waterSphere={waterSphere}
-                            planetTerrain={planetTerrain}
-                            visibleTreeCount={visibleTreeCount}
-                            isGreen={isGreen}
-                        />
-                    </group>
+                    <RotatingGroup>
+                        <group onClick={handleClick}>
+                            <PlanetModel onLoad={handleModelLoad} />
+                            <AnimationController
+                                trees={trees}
+                                waterSphere={waterSphere}
+                                planetTerrain={planetTerrain}
+                                visibleTreeCount={visibleTreeCount}
+                                isGreen={isGreen}
+                            />
+                        </group>
+                    </RotatingGroup>
                     <Environment preset="sunset" />
                 </Suspense>
                 <OrbitControls
@@ -265,7 +280,7 @@ function AnimationController({
         // Animate terrain color transition
         if (planetTerrain && colorTransitionStart.current !== null) {
             const elapsed = (now - colorTransitionStart.current) / 1000; // in seconds
-            const progress = Math.min(elapsed / colorTransitionDuration, 1);
+            const progress = Math.min(elapsed / colorTransitionDuration, 1.5);
 
             // Ease in-out for smooth color transition
             const eased = progress < 0.5
