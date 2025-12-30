@@ -13,7 +13,7 @@ export default async function Home() {
           href="/login"
           className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
         >
-          Enter Garden
+          Enter Forest
         </a>
       </div>
 

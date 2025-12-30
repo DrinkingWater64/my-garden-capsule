@@ -172,7 +172,7 @@ export default function Planet() {
         <div className="w-full h-[500px] relative">
             <Canvas shadows camera={{ position: [0, 20, 50], fov: 50 }}>
                 <ambientLight intensity={0.5} />
-                <directionalLight position={[5, 10, 5]} intensity={1} castShadow />
+                <directionalLight position={[5, 10, 5]} intensity={.8} castShadow />
                 <Suspense fallback={null}>
                     <RotatingGroup>
                         <group onClick={handleClick}>
@@ -196,7 +196,7 @@ export default function Planet() {
                 />
             </Canvas>
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-zinc-800 dark:text-zinc-200 text-sm font-medium z-10 pointer-events-none select-none">
-                {isGreen ? "The planet is thriving!" : "Click to plant trees..."} ({visibleTreeCount}/{trees.length || NUM_TREES})
+                {isGreen ? "The planet is thriving!" : "Click to plant trees..."}
             </div>
         </div>
     );
